@@ -1,0 +1,15 @@
+[package]
+name = "web_app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# picks the versions declared in [workspace.dependencies]
+axum        = { workspace = true }
+maud        = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+tokio       = { workspace = true }
+form_macro  = { workspace = true }
+serde_qs = "1.0.0-rc.3"
+urlencoding = "2.1.3"

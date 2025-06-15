@@ -1,0 +1,18 @@
+
+
+[workspace]
+members = [
+    "libs/form_macro",
+    "apps/web_app",
+]
+
+
+# Optional shared settings
+resolver = "2"                    # modern resolver (Cargo ≥1.65)
+[workspace.dependencies]          # declare deps once for everyone
+serde       = { version = "1.0", features = ["derive"] }
+serde_json  = "1.0"
+axum        = { version = "0.8", features = ["macros", "form"] }
+maud        = "0.26"
+tokio       = { version = "1.37", features = ["full"] }
+form_macro  = { path = "libs/form_macro" }
