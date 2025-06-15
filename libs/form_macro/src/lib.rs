@@ -46,6 +46,7 @@ pub fn form_gen(input: TokenStream) -> TokenStream {
     let mut form_fields = vec![];
     let mut form_to_domain = vec![];
     let mut domain_to_form = vec![];
+    let mut field_mappings = vec![]; // Store (domain_field, form_field, input_type)
 
     // Walk through each field in the struct
     for field in &fields.named {
@@ -61,6 +62,15 @@ pub fn form_gen(input: TokenStream) -> TokenStream {
                 form_fields.push(quote!(pub #field_name: #field_type));
                 form_to_domain.push(quote!(#field_name: form.#field_name));
                 domain_to_form.push(quote!(#field_name: domain.#field_name));
+
+                // Store mapping info
+                let field_name_str = field_name.to_string();
+                let input_type = if type_name == "u8" || type_name.starts_with('u') || type_name.starts_with('i') {
+                    "number"
+                } else {
+                    "text"
+                };
+                field_mappings.push((field_name_str.clone(), field_name_str, input_type));
             } else {
                 return syn::Error::new_spanned(field_name,
                                                "Marked non-primitive fields not yet supported")
@@ -73,9 +83,11 @@ pub fn form_gen(input: TokenStream) -> TokenStream {
 
             if !is_primitive(&type_name) {
                 // For custom types, assume they follow the Field pattern
-                // In a real implementation, you'd parse the type definition
                 if type_name == "Field" {
                     let flat_name = format_ident!("{}_value", field_name);
+                    let field_name_str = field_name.to_string();
+                    let flat_name_str = format!("{}_value", field_name_str);
+
                     form_fields.push(quote!(pub #flat_name: String));
 
                     // Generate conversion: Field { value: form.name_value, ..Default::default() }
@@ -88,6 +100,9 @@ pub fn form_gen(input: TokenStream) -> TokenStream {
 
                     // Generate reverse conversion: name_value: domain.name.value
                     domain_to_form.push(quote!(#flat_name: domain.#field_name.value.clone()));
+
+                    // Store mapping info
+                    field_mappings.push((field_name_str, flat_name_str, "text"));
                 }
             }
         }
@@ -108,17 +123,38 @@ pub fn form_gen(input: TokenStream) -> TokenStream {
         }
     }
 
+    // Generate field mapping constants
+    let mapping_constants = field_mappings.iter().map(|(domain_field, form_field, input_type)| {
+        let const_name = format_ident!("{}_FORM_FIELD", domain_field.to_uppercase());
+        quote! {
+            pub const #const_name: &'static str = #form_field;
+        }
+    });
+
+    let input_type_constants = field_mappings.iter().map(|(domain_field, _form_field, input_type)| {
+        let const_name = format_ident!("{}_INPUT_TYPE", domain_field.to_uppercase());
+        quote! {
+            pub const #const_name: &'static str = #input_type;
+        }
+    });
+
     let expanded = quote! {
+        /// Auto-generated form struct for [`#struct_name`]
         #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
         pub struct #form_name {
             #(#form_fields,)*
+        }
+
+        /// Field mapping constants for [`#struct_name`]
+        impl #form_name {
+            #(#mapping_constants)*
+            #(#input_type_constants)*
         }
 
         impl From<#form_name> for #struct_name {
             fn from(form: #form_name) -> Self {
                 #struct_name {
                     #(#form_to_domain,)*
-                    ..Default::default()
                 }
             }
         }

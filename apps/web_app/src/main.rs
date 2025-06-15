@@ -11,7 +11,7 @@ use serde::Serialize;  // ← Removed unused Deserialize
 use serde_json::json;
 use tokio::net::TcpListener;
 
-
+// ── domain models with tree-walking form generation ────
 #[derive(Clone, Debug, Default, Serialize, FormGen)]
 pub struct Field {
     #[mark]
@@ -28,6 +28,18 @@ pub struct Person {
     age: u8,           // ← Marked primitive → becomes "age: u8"
 }
 
+// ── The macro auto-generates PersonForm: ───────────────
+// pub struct PersonForm {
+//     pub name_value: String,  // from name.value (marked in Field)
+//     pub zip_value: String,   // from zip.value (marked in Field) 
+//     pub age: u8,            // from age (marked in Person)
+// }
+// + From<PersonForm> for Person
+// + From<Person> for PersonForm
+pub enum TypeMap {
+    TEXT
+}
+// ── show the HTML form ─────────────────────────────────
 async fn show_form() -> Html<String> {
     let person = Person {
         name: Field {
@@ -62,7 +74,7 @@ fn render_form(person: &Person) -> Markup {
         form method="post" action="/submit" {
             label { (person.name.label) }
             input 
-                type=(person.name.input_type)
+                type=(PersonForm::NAME_INPUT_TYPE)
                 name="name_value"          // ← Simple flat name, no brackets!
                 value=(person.name.value);
             br;
@@ -89,6 +101,7 @@ fn render_form(person: &Person) -> Markup {
 // ── main ───────────────────────────────────────────────
 #[tokio::main]
 async fn main() {
+
 
     let app = Router::new()
         .route("/", get(show_form))
