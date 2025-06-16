@@ -1,12 +1,12 @@
 use maud::{html, Markup};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use form_macro::FormGen;
 
 
 pub trait FormComponent {
     fn render(&self, field_name: &str) -> Markup;
 }
-#[derive(Clone, Debug, Serialize, FormGen)]
+#[derive(Clone, Debug, Serialize, Deserialize, FormGen)]
 pub struct TextField {
     #[mark]
     pub value: String,
@@ -20,17 +20,16 @@ pub struct TextField {
 }
 impl FormComponent for TextField {
     fn render(&self, field_name: &str) -> Markup {
-        let name_attr = format!("{}_value", field_name);
         html! {
             div class="form-field" {
                 @if !self.label.is_empty() {
-                    label for=(self.id.as_deref().unwrap_or(&name_attr)) { 
+                    label for=(self.id.as_deref().unwrap_or(field_name)) { 
                         (self.label) 
                     }
                 }
                 input type="text" 
-                   id=(self.id.as_deref().unwrap_or(&name_attr))
-                   name=(name_attr)
+                   id=(self.id.as_deref().unwrap_or(&field_name))
+                   name=(field_name)
                    value=(self.value)
                    placeholder=[self.placeholder.as_deref()]
                    class=[self.class.as_deref()]
@@ -56,7 +55,7 @@ impl Default for TextField {
     }
 }
 // TextArea field type for m ulti-line text input
-#[derive(Clone, Debug, Serialize, FormGen)]
+#[derive(Clone, Debug, Serialize, Deserialize, FormGen)]
 pub struct TextAreaField {
     #[mark]
     pub value: String,
@@ -73,16 +72,15 @@ pub struct TextAreaField {
 
 impl FormComponent for TextAreaField {
     fn render(&self, field_name: &str) -> Markup {
-        let name_attr = format!("{}_value", field_name);
         html! {
             div class="form-field" {
                 @if !self.label.is_empty() {
-                    label for=(self.id.as_deref().unwrap_or(&name_attr)) {
+                    label for=(self.id.as_deref().unwrap_or(&field_name)) {
                         (self.label)
                     }
                 }
-                textarea id=(self.id.as_deref().unwrap_or(&name_attr))
-                         name=(name_attr)
+                textarea id=(self.id.as_deref().unwrap_or(&field_name))
+                         name=(field_name)
                          placeholder=[self.placeholder.as_deref()]
                          class=[self.class.as_deref()]
                          rows=[self.rows.map(|r| r.to_string()).as_deref()]

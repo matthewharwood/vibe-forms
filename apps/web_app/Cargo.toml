@@ -11,5 +11,4 @@ serde       = { workspace = true }
 serde_json  = { workspace = true }
 tokio       = { workspace = true }
 form_macro  = { workspace = true }
-serde_qs = "1.0.0-rc.3"
-urlencoding = "2.1.3"
+surrealdb = { version = "2.3.3", features = ["kv-mem", "protocol-ws"] }
